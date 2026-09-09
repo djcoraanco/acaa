@@ -112,7 +112,7 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
 
           <div className="pt-2 border-t border-neutral-100">
             <p className="text-[11px] font-bold text-neutral-700 mb-2">
-              Credenciales de Acceso para el Profesor (SQLite):
+              Credenciales de Acceso para el Profesor (Firebase):
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">

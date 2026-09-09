@@ -206,7 +206,7 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
       <ConfirmDeleteModal
         isOpen={showDeleteTeacherConfirm}
         title={`¿Eliminar al profesor/a ${teacher.name}?`}
-        description={`Se eliminará permanentemente la cátedra de "${teacher.department}", el acceso del profesor y sus ${teacher.students.length} estudiantes registrados en la base de datos SQLite.`}
+        description={`Se eliminará permanentemente la cátedra de "${teacher.department}", el acceso del profesor y sus ${teacher.students.length} estudiantes registrados en Firebase Firestore.`}
         confirmText="Sí, eliminar profesor"
         onConfirm={() => onDeleteTeacher(teacher.id)}
         onClose={() => setShowDeleteTeacherConfirm(false)}

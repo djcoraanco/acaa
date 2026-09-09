@@ -11,6 +11,7 @@ import { AddTeacherModal } from './components/AddTeacherModal';
 import { DatabaseBackupModal } from './components/DatabaseBackupModal';
 import { AcademyLogo } from './components/AcademyLogo';
 import { api, getStoredToken } from './services/api';
+import { testFirestoreConnection } from './firebase';
 import {
   GraduationCap,
   Users,
@@ -51,6 +52,9 @@ export default function App() {
   // Check stored session on mount
   useEffect(() => {
     async function checkSession() {
+      // Validate Firestore connection on boot per Firebase guidelines
+      testFirestoreConnection();
+
       const token = getStoredToken();
       if (!token) {
         setIsLoadingAuth(false);
@@ -83,7 +87,7 @@ export default function App() {
       setTeachers(Array.isArray(teachersData) ? teachersData : []);
       setMusicReadingSections(Array.isArray(readingData) ? readingData : []);
     } catch (err: any) {
-      showNotification('error', err.message || 'Error al cargar datos de SQLite.');
+      showNotification('error', err.message || 'Error al cargar datos de Firebase.');
     } finally {
       setIsLoadingData(false);
     }
@@ -150,7 +154,7 @@ export default function App() {
         })
       );
 
-      showNotification('success', 'Estudiante creado y guardado en SQLite.');
+      showNotification('success', 'Estudiante creado y guardado en Firebase.');
     } catch (err: any) {
       showNotification('error', err.message || 'Error al crear estudiante.');
     }
@@ -182,7 +186,7 @@ export default function App() {
           students: t.students.filter((s) => s.id !== studentId),
         }))
       );
-      showNotification('success', 'Estudiante eliminado de SQLite.');
+      showNotification('success', 'Estudiante eliminado de Firebase.');
     } catch (err: any) {
       showNotification('error', err.message || 'Error al eliminar estudiante.');
     }
@@ -199,7 +203,7 @@ export default function App() {
         department: updatedTeacher.department,
         username: updatedTeacher.username,
       });
-      showNotification('success', 'Datos del profesor guardados en SQLite.');
+      showNotification('success', 'Datos del profesor guardados en Firebase.');
     } catch (err: any) {
       showNotification('error', err.message || 'Error al actualizar profesor.');
       await loadAllData();
@@ -210,7 +214,7 @@ export default function App() {
     try {
       await api.deleteTeacher(teacherId);
       setTeachers((prev) => prev.filter((t) => t.id !== teacherId));
-      showNotification('success', 'Profesor eliminado de SQLite.');
+      showNotification('success', 'Profesor eliminado de Firebase.');
     } catch (err: any) {
       showNotification('error', err.message || 'Error al eliminar profesor.');
     }
@@ -218,7 +222,7 @@ export default function App() {
 
   const handleTeacherCreated = (newTeacher: Teacher) => {
     setTeachers((prev) => [...prev, newTeacher]);
-    showNotification('success', `Profesor "${newTeacher.name}" registrado en SQLite.`);
+    showNotification('success', `Profesor "${newTeacher.name}" registrado en Firebase.`);
   };
 
   // Music Reading Section Handlers
@@ -229,7 +233,7 @@ export default function App() {
 
     try {
       await api.updateMusicReadingSection(section.id, section);
-      showNotification('success', `Sección "${section.name}" guardada en SQLite.`);
+      showNotification('success', `Sección "${section.name}" guardada en Firebase.`);
     } catch (err: any) {
       showNotification('error', err.message || 'Error al guardar cambios de la sección.');
       await loadAllData();
@@ -240,7 +244,7 @@ export default function App() {
     try {
       await api.deleteMusicReadingSection(sectionId);
       setMusicReadingSections((prev) => prev.filter((s) => s.id !== sectionId));
-      showNotification('success', 'Sección de lectura eliminada de SQLite.');
+      showNotification('success', 'Sección de lectura eliminada de Firebase.');
     } catch (err: any) {
       showNotification('error', err.message || 'Error al eliminar sección.');
     }
@@ -259,7 +263,7 @@ export default function App() {
     try {
       const res = await api.createMusicReadingSection(data);
       setMusicReadingSections((prev) => [res.section, ...prev]);
-      showNotification('success', `Sección "${res.section.name}" creada en SQLite.`);
+      showNotification('success', `Sección "${res.section.name}" creada en Firebase.`);
     } catch (err: any) {
       showNotification('error', err.message || 'Error al crear sección grupal.');
     }
@@ -425,13 +429,13 @@ export default function App() {
             <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center">
               <div className="flex items-center gap-1.5 text-neutral-600 font-mono text-[11px]">
                 <Database className="w-3.5 h-3.5 text-[#c52227]" />
-                <span>SQLite: Activo</span>
+                <span>Firebase: Conectado</span>
               </div>
               <button
                 onClick={loadAllData}
                 disabled={isLoadingData}
                 className="p-1.5 rounded-lg text-neutral-500 hover:text-[#c52227] hover:bg-neutral-200 transition-colors cursor-pointer"
-                title="Recargar desde SQLite"
+                title="Recargar desde Firebase"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-[#c52227]' : ''}`} />
               </button>
@@ -586,10 +590,10 @@ export default function App() {
                     </div>
                   </div>
                   <div className="text-base font-bold text-[#c52227] flex items-center gap-1.5 pt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-[#c52227] animate-pulse"></span>
-                    <span>SQLite Conectado</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Firebase Conectado</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">data/academia.sqlite</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">acaa-afe48 (Cloud Firestore)</p>
                 </div>
 
                 <button
@@ -647,7 +651,7 @@ export default function App() {
             {isLoadingData ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-neutral-200">
                 <RefreshCw className="w-8 h-8 text-[#c52227] animate-spin mx-auto mb-3" />
-                <p className="text-sm font-semibold text-neutral-700">Cargando base de datos SQLite...</p>
+                <p className="text-sm font-semibold text-neutral-700">Cargando base de datos Firebase...</p>
               </div>
             ) : filteredTeachers.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-neutral-200 p-6">
@@ -729,7 +733,7 @@ export default function App() {
           </div>
           <div className="text-center sm:text-right font-medium">
             <p className="text-neutral-800 font-bold">Academia de Cuerdas Antonio Aquino</p>
-            <p className="text-[11px] text-neutral-400">Ciclo Académico 2026 - 2027 • Base de datos SQLite</p>
+            <p className="text-[11px] text-neutral-400">Ciclo Académico 2026 - 2027 • Base de datos Firebase Firestore</p>
           </div>
         </div>
       </footer>
@@ -749,6 +753,7 @@ export default function App() {
       <DatabaseBackupModal
         isOpen={isBackupModalOpen}
         onClose={() => setIsBackupModalOpen(false)}
+        onDataChanged={loadAllData}
       />
 
       {currentUser && (

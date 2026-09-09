@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "Teacher": {
+      "title": "Teacher",
+      "description": "Profesor o docente titular de cátedra musical",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único del profesor" },
+        "name": { "type": "string", "description": "Nombre completo del profesor" },
+        "department": { "type": "string", "description": "Cátedra o departamento musical (Violín, Guitarra, etc.)" },
+        "username": { "type": "string", "description": "Nombre de usuario para inicio de sesión" },
+        "createdAt": { "type": "string", "description": "Fecha y hora de creación ISO" }
+      },
+      "required": ["id", "name", "department", "username"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Estudiante matriculado con expediente académico y notas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único del estudiante" },
+        "teacherId": { "type": "string", "description": "ID del profesor asignado" },
+        "name": { "type": "string", "description": "Nombre completo del estudiante" },
+        "instrument": { "type": "string", "description": "Instrumento musical principal" },
+        "level": { "type": "string", "description": "Nivel académico" },
+        "classDay": { "type": "string", "description": "Día de clase regular" },
+        "classTime": { "type": "string", "description": "Hora de clase programada" },
+        "expectedRepertoire": { "type": "string", "description": "Repertorio planificado" },
+        "recitalRepertoire": { "type": "string", "description": "Repertorio para recital" },
+        "examRepertoire": { "type": "string", "description": "Repertorio de examen" },
+        "technicalProgressNotes": { "type": "string", "description": "Notas técnicas generales" }
+      },
+      "required": ["id", "teacherId", "name", "instrument", "level"]
+    },
+    "MusicReadingSection": {
+      "title": "MusicReadingSection",
+      "description": "Sección grupal de Lectura Musical / Solfeo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador de la sección" },
+        "name": { "type": "string", "description": "Nombre de la sección" },
+        "level": { "type": "string", "description": "Nivel de lectura musical" },
+        "teacherId": { "type": "string", "description": "ID del docente de la sección" },
+        "teacherName": { "type": "string", "description": "Nombre del docente" }
+      },
+      "required": ["id", "name", "level", "teacherId"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Registro de auditoría de acciones administrativas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID del registro de auditoría" },
+        "actionType": { "type": "string", "description": "Tipo de acción ejecutada" },
+        "description": { "type": "string", "description": "Descripción detallada de la acción" },
+        "createdAt": { "type": "string", "description": "Timestamp del registro" }
+      },
+      "required": ["id", "actionType", "description"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Cuenta de usuario del sistema",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID del usuario" },
+        "username": { "type": "string", "description": "Nombre de usuario" },
+        "name": { "type": "string", "description": "Nombre completo" },
+        "role": { "type": "string", "description": "Rol: admin o teacher" }
+      },
+      "required": ["id", "username", "name", "role"]
+    }
+  },
+  "firestore": {
+    "/teachers/{teacherId}": {
+      "schema": "Teacher",
+      "description": "Colección de profesores y directores de cátedra"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Colección de estudiantes y sus registros de seguimiento"
+    },
+    "/musicReadingSections/{sectionId}": {
+      "schema": "MusicReadingSection",
+      "description": "Colección de secciones grupales de lectura musical"
+    },
+    "/auditLogs/{auditId}": {
+      "schema": "AuditLog",
+      "description": "Colección de registros de auditoría y seguridad"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Colección de credenciales y perfiles de usuario"
+    }
+  }
+}

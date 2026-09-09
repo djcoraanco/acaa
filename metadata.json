@@ -1,6 +1,6 @@
 {
   "name": "Academia de Cuerdas Antonio Aquino",
-  "description": "Sistema de gestión académica, repertorios, evaluaciones y control de asistencia de la Academia de Cuerdas Antonio Aquino con base de datos SQLite.",
+  "description": "Sistema de gestión académica, repertorios, evaluaciones y control de asistencia de la Academia de Cuerdas Antonio Aquino con base de datos Firebase.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
