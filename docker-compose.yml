@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  academia-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: academia-cuerdas:latest
+    container_name: academia-cuerdas
+    restart: unless-stopped
+    ports:
+      # Puerto host:puerto contenedor. Cambia el puerto izquierdo (ej: 8080:3000 o 80:3000) si lo necesitas.
+      - "${PORT:-3000}:3000"
+    volumes:
+      # Volumen persistente para la base de datos SQLite y respaldos
+      - academia_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATA_DIR=/app/data
+      - DATABASE_FILE=/app/data/academia.sqlite
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "io.portainer.stack.name=academia-cuerdas"
+
+volumes:
+  # Volumen local de Docker gestionado por Portainer para asegurar persistencia permanente
+  academia_data:
+    name: academia_data
+    driver: local
