@@ -19,6 +19,7 @@ interface StudentCardProps {
   student: Student;
   weeks: SchoolYearWeek[];
   canDeleteStudent?: boolean;
+  canEditStudentInfo?: boolean;
   onUpdateStudent: (updated: Student) => void;
   onDeleteStudent: (studentId: string) => void;
 }
@@ -27,6 +28,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
   student,
   weeks,
   canDeleteStudent = false,
+  canEditStudentInfo = false,
   onUpdateStudent,
   onDeleteStudent,
 }) => {
@@ -110,35 +112,53 @@ export const StudentCard: React.FC<StudentCardProps> = ({
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <input
-                type="text"
-                value={student.name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                placeholder="Nombre completo del alumno"
-                className="font-bold text-[#252525] text-base sm:text-lg bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-[#c52227] focus:bg-white px-1 py-0.5 rounded outline-hidden transition-colors"
-              />
+              {canEditStudentInfo ? (
+                <input
+                  type="text"
+                  value={student.name}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
+                  placeholder="Nombre completo del alumno"
+                  className="font-bold text-[#252525] text-base sm:text-lg bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-[#c52227] focus:bg-white px-1 py-0.5 rounded outline-hidden transition-colors"
+                />
+              ) : (
+                <span className="font-bold text-[#252525] text-base sm:text-lg px-1 py-0.5">
+                  {student.name}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-neutral-500 flex-wrap">
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-neutral-700">Instrumento:</span>
-                <input
-                  type="text"
-                  value={student.instrument}
-                  onChange={(e) => handleFieldChange('instrument', e.target.value)}
-                  placeholder="Ej. Violín, Viola, Violonchelo..."
-                  className="bg-transparent border-b border-neutral-200 hover:border-neutral-400 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-800"
-                />
+                {canEditStudentInfo ? (
+                  <input
+                    type="text"
+                    value={student.instrument}
+                    onChange={(e) => handleFieldChange('instrument', e.target.value)}
+                    placeholder="Ej. Violín, Viola, Violonchelo..."
+                    className="bg-transparent border-b border-neutral-200 hover:border-neutral-400 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-800"
+                  />
+                ) : (
+                  <span className="font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md border border-neutral-200">
+                    {student.instrument}
+                  </span>
+                )}
               </div>
               <span className="text-neutral-300">•</span>
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-neutral-700">Nivel/Curso:</span>
-                <input
-                  type="text"
-                  value={student.level}
-                  onChange={(e) => handleFieldChange('level', e.target.value)}
-                  placeholder="Ej. Grado Elemental 2"
-                  className="bg-transparent border-b border-neutral-200 hover:border-neutral-400 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-800"
-                />
+                {canEditStudentInfo ? (
+                  <input
+                    type="text"
+                    value={student.level}
+                    onChange={(e) => handleFieldChange('level', e.target.value)}
+                    placeholder="Ej. Grado Elemental 2"
+                    className="bg-transparent border-b border-neutral-200 hover:border-neutral-400 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-800"
+                  />
+                ) : (
+                  <span className="font-semibold text-neutral-700">
+                    {student.level}
+                  </span>
+                )}
               </div>
               <span className="text-neutral-300">•</span>
               <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-neutral-200">

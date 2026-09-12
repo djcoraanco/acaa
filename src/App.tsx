@@ -282,22 +282,45 @@ export default function App() {
     );
   }, [teachers]);
 
-  // Filtered teachers list (by search)
-  const filteredTeachers = teachers.filter((t) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    const matchesTeacher =
-      t.name.toLowerCase().includes(query) || t.department.toLowerCase().includes(query);
-    const matchesStudent = t.students.some(
-      (s) =>
-        s.name.toLowerCase().includes(query) ||
-        s.instrument.toLowerCase().includes(query) ||
-        s.level.toLowerCase().includes(query)
-    );
-    return matchesTeacher || matchesStudent;
-  });
+  // Ensure teachers remain on the instrument tab
+  useEffect(() => {
+    if (currentUser?.role === 'teacher' && activeAppTab !== 'instrument') {
+      setActiveAppTab('instrument');
+    }
+  }, [currentUser, activeAppTab]);
 
-  const totalStudents = teachers.reduce((acc, t) => acc + t.students.length, 0);
+  // Filtered teachers list (strictly isolated by role and search)
+  const visibleTeachers = useMemo(() => {
+    let list = teachers;
+
+    // Strict teacher isolation: If logged in as teacher, ONLY include their own record!
+    if (currentUser?.role === 'teacher') {
+      list = teachers.filter((t) => {
+        if (currentUser.teacherId && t.id === currentUser.teacherId) return true;
+        if (t.username && currentUser.username && t.username.toLowerCase() === currentUser.username.toLowerCase()) return true;
+        if (currentUser.id === `user-${t.id}`) return true;
+        return false;
+      });
+    }
+
+    if (!searchQuery.trim()) return list;
+    const query = searchQuery.toLowerCase();
+    return list.filter((t) => {
+      const matchesTeacher =
+        t.name.toLowerCase().includes(query) || t.department.toLowerCase().includes(query);
+      const matchesStudent = t.students.some(
+        (s) =>
+          s.name.toLowerCase().includes(query) ||
+          s.instrument.toLowerCase().includes(query) ||
+          s.level.toLowerCase().includes(query)
+      );
+      return matchesTeacher || matchesStudent;
+    });
+  }, [teachers, currentUser, searchQuery]);
+
+  const totalStudents = useMemo(() => {
+    return visibleTeachers.reduce((acc, t) => acc + t.students.length, 0);
+  }, [visibleTeachers]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans pb-20">
@@ -426,118 +449,135 @@ export default function App() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center">
-              <div className="flex items-center gap-1.5 text-neutral-600 font-mono text-[11px]">
-                <Database className="w-3.5 h-3.5 text-[#c52227]" />
-                <span>Firebase: Conectado</span>
+            {currentUser.role === 'admin' && (
+              <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-1.5 text-neutral-600 font-mono text-[11px]">
+                  <Database className="w-3.5 h-3.5 text-[#c52227]" />
+                  <span>Firebase: Conectado</span>
+                </div>
+                <button
+                  onClick={loadAllData}
+                  disabled={isLoadingData}
+                  className="p-1.5 rounded-lg text-neutral-500 hover:text-[#c52227] hover:bg-neutral-200 transition-colors cursor-pointer"
+                  title="Recargar base de datos"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-[#c52227]' : ''}`} />
+                </button>
+                <button
+                  type="button"
+                  id="btn-open-backup-modal-top"
+                  onClick={() => setIsBackupModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-neutral-700 hover:text-white bg-neutral-200/80 hover:bg-[#252525] transition-all cursor-pointer shadow-2xs"
+                  title="Descargar base de datos y copia de seguridad"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#c52227]" />
+                  <span>Descargar BD</span>
+                </button>
               </div>
-              <button
-                onClick={loadAllData}
-                disabled={isLoadingData}
-                className="p-1.5 rounded-lg text-neutral-500 hover:text-[#c52227] hover:bg-neutral-200 transition-colors cursor-pointer"
-                title="Recargar desde Firebase"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-[#c52227]' : ''}`} />
-              </button>
-              <button
-                type="button"
-                id="btn-open-backup-modal-top"
-                onClick={() => setIsBackupModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-neutral-700 hover:text-white bg-neutral-200/80 hover:bg-[#252525] transition-all cursor-pointer shadow-2xs"
-                title="Descargar base de datos y copia de seguridad"
-              >
-                <Download className="w-3.5 h-3.5 text-[#c52227]" />
-                <span>Descargar BD</span>
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Primary Section Switcher Tabs */}
-      <div className="bg-white border-b border-neutral-200 sticky top-20 z-20 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
-          <button
-            id="tab-instrument-classes"
-            type="button"
-            onClick={() => setActiveAppTab('instrument')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              activeAppTab === 'instrument'
-                ? 'bg-[#c52227] text-white shadow-xs'
-                : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
-            }`}
-          >
-            <Music className="w-4 h-4" />
-            <span>Cátedras de Instrumento</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.5 rounded-md ${
-                activeAppTab === 'instrument' ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-700'
+      {currentUser?.role === 'admin' ? (
+        <div className="bg-white border-b border-neutral-200 sticky top-20 z-20 shadow-2xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
+            <button
+              id="tab-instrument-classes"
+              type="button"
+              onClick={() => setActiveAppTab('instrument')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                activeAppTab === 'instrument'
+                  ? 'bg-[#c52227] text-white shadow-xs'
+                  : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
               }`}
             >
-              {teachers.length}
-            </span>
-          </button>
+              <Music className="w-4 h-4" />
+              <span>Cátedras de Instrumento</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                  activeAppTab === 'instrument' ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-700'
+                }`}
+              >
+                {teachers.length}
+              </span>
+            </button>
 
-          <button
-            id="tab-reading-sections"
-            type="button"
-            onClick={() => setActiveAppTab('reading')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              activeAppTab === 'reading'
-                ? 'bg-[#c52227] text-white shadow-xs'
-                : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Lectura Musical (Grupos)</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.5 rounded-md ${
-                activeAppTab === 'reading' ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-700'
+            <button
+              id="tab-reading-sections"
+              type="button"
+              onClick={() => setActiveAppTab('reading')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                activeAppTab === 'reading'
+                  ? 'bg-[#c52227] text-white shadow-xs'
+                  : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
               }`}
             >
-              {musicReadingSections.length}
-            </span>
-          </button>
-
-          {currentUser?.role === 'admin' && (
-            <>
-              <button
-                id="tab-grade-reports"
-                type="button"
-                onClick={() => setActiveAppTab('reports')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  activeAppTab === 'reports'
-                    ? 'bg-[#252525] text-white shadow-xs'
-                    : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
+              <Users className="w-4 h-4" />
+              <span>Lectura Musical (Grupos)</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                  activeAppTab === 'reading' ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-700'
                 }`}
               >
-                <Award className="w-4 h-4 text-amber-500" />
-                <span>Boletines y Calificaciones</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold border border-amber-200">
-                  Admin
-                </span>
-              </button>
+                {musicReadingSections.length}
+              </span>
+            </button>
 
-              <button
-                id="tab-audit-dashboard"
-                type="button"
-                onClick={() => setActiveAppTab('audit')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  activeAppTab === 'audit'
-                    ? 'bg-[#c52227] text-white shadow-xs'
-                    : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
-                }`}
-              >
-                <Radio className="w-4 h-4 text-rose-300" />
-                <span>Auditoría & Conexiones</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-100 text-[#c52227] font-bold border border-red-200">
-                  Admin
-                </span>
-              </button>
-            </>
-          )}
+            <button
+              id="tab-grade-reports"
+              type="button"
+              onClick={() => setActiveAppTab('reports')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                activeAppTab === 'reports'
+                  ? 'bg-[#252525] text-white shadow-xs'
+                  : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
+              }`}
+            >
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>Boletines y Calificaciones</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold border border-amber-200">
+                Admin
+              </span>
+            </button>
+
+            <button
+              id="tab-audit-dashboard"
+              type="button"
+              onClick={() => setActiveAppTab('audit')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                activeAppTab === 'audit'
+                  ? 'bg-[#c52227] text-white shadow-xs'
+                  : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200'
+              }`}
+            >
+              <Radio className="w-4 h-4 text-rose-300" />
+              <span>Auditoría & Conexiones</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-100 text-[#c52227] font-bold border border-red-200">
+                Admin
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white border-b border-neutral-200 sticky top-20 z-20 shadow-2xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#c52227] text-white shadow-xs">
+                <Music className="w-4 h-4" />
+                <span>Mis Estudiantes de Instrumento</span>
+              </span>
+              <span className="text-xs text-neutral-500 hidden sm:inline font-medium">
+                {visibleTeachers[0]?.department ? `Cátedra de ${visibleTeachers[0].department}` : 'Apartado de Instrumento'}
+              </span>
+            </div>
+            <div className="text-xs font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200 px-3 py-1 rounded-xl">
+              <strong className="text-[#252525] font-black text-sm">{totalStudents}</strong> {totalStudents === 1 ? 'estudiante asignado' : 'estudiantes asignados'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
@@ -545,29 +585,41 @@ export default function App() {
         {activeAppTab === 'instrument' && (
           <div className="space-y-6">
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div
+              className={`grid gap-4 ${
+                currentUser?.role === 'admin' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'
+              }`}
+            >
               <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs">
                 <div className="flex items-center justify-between text-neutral-500 mb-1">
-                  <span className="text-xs font-semibold text-neutral-600">Cátedras / Profesores</span>
+                  <span className="text-xs font-semibold text-neutral-600">
+                    {currentUser?.role === 'admin' ? 'Cátedras / Profesores' : 'Mi Cátedra'}
+                  </span>
                   <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center text-[#252525]">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-black text-[#252525]">{teachers.length}</div>
-                <p className="text-[11px] text-neutral-400 mt-0.5">
-                  {currentUser?.role === 'admin' ? 'Total en la academia' : 'Tu cátedra asignada'}
+                <div className="text-2xl font-black text-[#252525]">
+                  {currentUser?.role === 'admin' ? teachers.length : (visibleTeachers[0]?.department || 'Instrumento')}
+                </div>
+                <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
+                  {currentUser?.role === 'admin' ? 'Total en la academia' : (visibleTeachers[0]?.name || 'Docente')}
                 </p>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs">
                 <div className="flex items-center justify-between text-neutral-500 mb-1">
-                  <span className="text-xs font-semibold text-neutral-600">Alumnos Registrados</span>
+                  <span className="text-xs font-semibold text-neutral-600">
+                    {currentUser?.role === 'admin' ? 'Alumnos Registrados' : 'Mis Alumnos'}
+                  </span>
                   <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-[#c52227]">
                     <Users className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="text-2xl font-black text-[#252525]">{totalStudents}</div>
-                <p className="text-[11px] text-neutral-400 mt-0.5">Fichas académicas</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  {currentUser?.role === 'admin' ? 'Fichas académicas' : 'Fichas a evaluar'}
+                </p>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs">
@@ -581,31 +633,33 @@ export default function App() {
                 <p className="text-[11px] text-neutral-400 mt-0.5">Sep 2026 - Jun 2027</p>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between text-neutral-500 mb-1">
-                    <span className="text-xs font-semibold text-neutral-600">Base de Datos</span>
-                    <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-[#c52227]">
-                      <Database className="w-4 h-4" />
+              {currentUser?.role === 'admin' && (
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between text-neutral-500 mb-1">
+                      <span className="text-xs font-semibold text-neutral-600">Base de Datos</span>
+                      <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-[#c52227]">
+                        <Database className="w-4 h-4" />
+                      </div>
                     </div>
+                    <div className="text-base font-bold text-[#c52227] flex items-center gap-1.5 pt-0.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>Firebase Conectado</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">acaa-afe48 (Cloud Firestore)</p>
                   </div>
-                  <div className="text-base font-bold text-[#c52227] flex items-center gap-1.5 pt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Firebase Conectado</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">acaa-afe48 (Cloud Firestore)</p>
-                </div>
 
-                <button
-                  type="button"
-                  id="btn-open-backup-card"
-                  onClick={() => setIsBackupModalOpen(true)}
-                  className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-[#252525] text-neutral-700 hover:text-white rounded-xl text-xs font-bold transition-all border border-neutral-200 shadow-2xs cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#c52227]" />
-                  <span>Descargar Copia de Seguridad</span>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    id="btn-open-backup-card"
+                    onClick={() => setIsBackupModalOpen(true)}
+                    className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-[#252525] text-neutral-700 hover:text-white rounded-xl text-xs font-bold transition-all border border-neutral-200 shadow-2xs cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#c52227]" />
+                    <span>Descargar Copia de Seguridad</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Toolbar: Search and Admin Actions */}
@@ -616,25 +670,29 @@ export default function App() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar por profesor, cátedra o alumno..."
+                  placeholder={
+                    currentUser?.role === 'admin'
+                      ? 'Buscar por profesor, cátedra o alumno...'
+                      : 'Buscar entre mis alumnos...'
+                  }
                   className="w-full text-xs pl-9 pr-4 py-2 rounded-xl border border-neutral-200 focus:border-[#c52227] focus:ring-1 focus:ring-[#c52227] outline-hidden bg-neutral-50 focus:bg-white transition-colors"
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  id="btn-download-db-toolbar"
-                  onClick={() => setIsBackupModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-neutral-100 hover:bg-[#252525] text-neutral-800 hover:text-white rounded-xl border border-neutral-200 transition-colors cursor-pointer shadow-2xs"
-                  title="Descargar respaldo de base de datos"
-                >
-                  <Download className="w-4 h-4 text-[#c52227]" />
-                  <span>Descargar BD</span>
-                </button>
+              {/* Action Buttons (Strictly Admin only) */}
+              {currentUser?.role === 'admin' && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    id="btn-download-db-toolbar"
+                    onClick={() => setIsBackupModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-neutral-100 hover:bg-[#252525] text-neutral-800 hover:text-white rounded-xl border border-neutral-200 transition-colors cursor-pointer shadow-2xs"
+                    title="Descargar respaldo de base de datos"
+                  >
+                    <Download className="w-4 h-4 text-[#c52227]" />
+                    <span>Descargar BD</span>
+                  </button>
 
-                {currentUser?.role === 'admin' && (
                   <button
                     id="btn-admin-add-teacher"
                     onClick={() => setIsAddTeacherModalOpen(true)}
@@ -643,22 +701,30 @@ export default function App() {
                     <UserPlus className="w-4 h-4" />
                     <span>Registrar Nuevo Profesor</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Teachers Sections */}
             {isLoadingData ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-neutral-200">
                 <RefreshCw className="w-8 h-8 text-[#c52227] animate-spin mx-auto mb-3" />
-                <p className="text-sm font-semibold text-neutral-700">Cargando base de datos Firebase...</p>
+                <p className="text-sm font-semibold text-neutral-700">
+                  {currentUser?.role === 'admin' ? 'Cargando base de datos...' : 'Cargando cátedra académica...'}
+                </p>
               </div>
-            ) : filteredTeachers.length === 0 ? (
+            ) : visibleTeachers.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-neutral-200 p-6">
                 <GraduationCap className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-neutral-700">No se encontraron profesores</h3>
+                <h3 className="text-base font-bold text-neutral-700">
+                  {currentUser?.role === 'teacher'
+                    ? 'No se encontraron estudiantes para tu cátedra'
+                    : 'No se encontraron profesores'}
+                </h3>
                 <p className="text-xs text-neutral-500 max-w-md mx-auto mt-1 mb-4">
-                  {searchQuery
+                  {currentUser?.role === 'teacher'
+                    ? 'Comunícate con la administración de la academia para la asignación de estudiantes.'
+                    : searchQuery
                     ? 'Ningún profesor o alumno coincide con los términos de búsqueda.'
                     : 'No hay profesores registrados en este momento.'}
                 </p>
@@ -674,13 +740,16 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6">
-                {filteredTeachers.map((teacher) => (
+                {visibleTeachers.map((teacher) => (
                   <TeacherSection
                     key={teacher.id}
                     teacher={teacher}
                     weeks={ACADEMIC_WEEKS}
                     canDeleteTeacher={currentUser?.role === 'admin'}
                     canDeleteStudent={currentUser?.role === 'admin'}
+                    canAddStudent={currentUser?.role === 'admin'}
+                    canEditTeacher={currentUser?.role === 'admin'}
+                    canEditStudentInfo={currentUser?.role === 'admin'}
                     onUpdateTeacher={handleUpdateTeacher}
                     onDeleteTeacher={handleDeleteTeacher}
                     onAddStudent={handleAddStudent}
@@ -693,8 +762,8 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW 2: Music Reading Collective Sections */}
-        {activeAppTab === 'reading' && (
+        {/* VIEW 2: Music Reading Collective Sections (Admin Only) */}
+        {activeAppTab === 'reading' && currentUser?.role === 'admin' && (
           <MusicReadingManager
             sections={musicReadingSections}
             allStudents={allStudents}
@@ -706,8 +775,8 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 3: Admin Grade Reports Dashboard (Monthly & Semesterly) */}
-        {activeAppTab === 'reports' && (
+        {/* VIEW 3: Admin Grade Reports Dashboard (Admin Only) */}
+        {activeAppTab === 'reports' && currentUser?.role === 'admin' && (
           <GradeReportsDashboard
             teachers={teachers}
             sections={musicReadingSections}
@@ -715,7 +784,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: Admin Audit & Teacher Connections Dashboard */}
+        {/* VIEW 4: Admin Audit & Teacher Connections Dashboard (Admin Only) */}
         {activeAppTab === 'audit' && currentUser?.role === 'admin' && (
           <AdminAuditDashboard
             teachers={teachers}
@@ -733,7 +802,10 @@ export default function App() {
           </div>
           <div className="text-center sm:text-right font-medium">
             <p className="text-neutral-800 font-bold">Academia de Cuerdas Antonio Aquino</p>
-            <p className="text-[11px] text-neutral-400">Ciclo Académico 2026 - 2027 • Base de datos Firebase Firestore</p>
+            <p className="text-[11px] text-neutral-400">
+              Ciclo Académico 2026 - 2027
+              {currentUser?.role === 'admin' ? ' • Base de datos Firebase Firestore' : ''}
+            </p>
           </div>
         </div>
       </footer>
@@ -744,17 +816,21 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
       />
 
-      <AddTeacherModal
-        isOpen={isAddTeacherModalOpen}
-        onClose={() => setIsAddTeacherModalOpen(false)}
-        onTeacherCreated={handleTeacherCreated}
-      />
+      {currentUser?.role === 'admin' && (
+        <AddTeacherModal
+          isOpen={isAddTeacherModalOpen}
+          onClose={() => setIsAddTeacherModalOpen(false)}
+          onTeacherCreated={handleTeacherCreated}
+        />
+      )}
 
-      <DatabaseBackupModal
-        isOpen={isBackupModalOpen}
-        onClose={() => setIsBackupModalOpen(false)}
-        onDataChanged={loadAllData}
-      />
+      {currentUser?.role === 'admin' && (
+        <DatabaseBackupModal
+          isOpen={isBackupModalOpen}
+          onClose={() => setIsBackupModalOpen(false)}
+          onDataChanged={loadAllData}
+        />
+      )}
 
       {currentUser && (
         <AdminProfileModal

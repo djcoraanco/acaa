@@ -19,6 +19,9 @@ interface TeacherSectionProps {
   weeks: SchoolYearWeek[];
   canDeleteTeacher: boolean;
   canDeleteStudent?: boolean;
+  canAddStudent?: boolean;
+  canEditTeacher?: boolean;
+  canEditStudentInfo?: boolean;
   onUpdateTeacher: (updated: Teacher) => void;
   onDeleteTeacher: (teacherId: string) => void;
   onAddStudent: (teacherId: string) => void;
@@ -31,7 +34,10 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
   teacher,
   weeks,
   canDeleteTeacher,
-  canDeleteStudent,
+  canDeleteStudent = false,
+  canAddStudent = false,
+  canEditTeacher = false,
+  canEditStudentInfo = false,
   onUpdateTeacher,
   onDeleteTeacher,
   onAddStudent,
@@ -56,15 +62,21 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <input
-                type="text"
-                value={teacher.name}
-                onChange={(e) =>
-                  onUpdateTeacher({ ...teacher, name: e.target.value })
-                }
-                placeholder="Nombre del Profesor/a"
-                className="font-bold text-lg sm:text-xl text-white bg-transparent border-b border-transparent hover:border-white/30 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden"
-              />
+              {canEditTeacher ? (
+                <input
+                  type="text"
+                  value={teacher.name}
+                  onChange={(e) =>
+                    onUpdateTeacher({ ...teacher, name: e.target.value })
+                  }
+                  placeholder="Nombre del Profesor/a"
+                  className="font-bold text-lg sm:text-xl text-white bg-transparent border-b border-transparent hover:border-white/30 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden"
+                />
+              ) : (
+                <span className="font-bold text-lg sm:text-xl text-white px-1 py-0.5">
+                  {teacher.name}
+                </span>
+              )}
               {teacher.username && (
                 <span className="text-[11px] bg-white/10 border border-white/20 text-neutral-300 px-2.5 py-0.5 rounded-full font-mono">
                   @{teacher.username}
@@ -73,33 +85,41 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
             </div>
             <div className="flex items-center gap-2 text-xs text-neutral-300 mt-0.5">
               <Music className="w-3.5 h-3.5 text-[#c52227]" />
-              <input
-                type="text"
-                value={teacher.department}
-                onChange={(e) =>
-                  onUpdateTeacher({ ...teacher, department: e.target.value })
-                }
-                placeholder="Cátedra / Especialidad (ej. Piano, Violín, Guitarra)"
-                className="bg-transparent border-b border-white/20 hover:border-white/40 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-200"
-              />
+              {canEditTeacher ? (
+                <input
+                  type="text"
+                  value={teacher.department}
+                  onChange={(e) =>
+                    onUpdateTeacher({ ...teacher, department: e.target.value })
+                  }
+                  placeholder="Cátedra / Especialidad (ej. Piano, Violín, Guitarra)"
+                  className="bg-transparent border-b border-white/20 hover:border-white/40 focus:border-[#c52227] px-1 py-0.5 rounded outline-hidden text-neutral-200"
+                />
+              ) : (
+                <span className="text-neutral-200 font-medium px-1 py-0.5">
+                  Cátedra de {teacher.department}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 self-end md:self-center">
-          <button
-            id={`btn-add-student-${teacher.id}`}
-            type="button"
-            onClick={() => {
-              onAddStudent(teacher.id);
-              setIsExpanded(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#c52227] hover:bg-[#a81b20] text-white rounded-xl shadow-xs transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Agregar Estudiante</span>
-          </button>
+          {canAddStudent && (
+            <button
+              id={`btn-add-student-${teacher.id}`}
+              type="button"
+              onClick={() => {
+                onAddStudent(teacher.id);
+                setIsExpanded(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#c52227] hover:bg-[#a81b20] text-white rounded-xl shadow-xs transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Agregar Estudiante</span>
+            </button>
+          )}
 
           {canDeleteTeacher && (
             <>
@@ -166,19 +186,25 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
             <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl bg-white p-6">
               <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-sm font-medium text-slate-700">
-                Este profesor no tiene estudiantes todavía
+                {canAddStudent
+                  ? 'Este profesor no tiene estudiantes todavía'
+                  : 'Aún no tienes estudiantes asignados a tu cátedra'}
               </p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
-                Agrega al primer alumno para gestionar sus repertorios del ciclo, recitales, exámenes y asistencia.
+                {canAddStudent
+                  ? 'Agrega al primer alumno para gestionar sus repertorios del ciclo, recitales, exámenes y asistencia.'
+                  : 'La dirección académica asignará a tus alumnos en el sistema.'}
               </p>
-              <button
-                type="button"
-                onClick={() => onAddStudent(teacher.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Agregar Estudiante Ahora</span>
-              </button>
+              {canAddStudent && (
+                <button
+                  type="button"
+                  onClick={() => onAddStudent(teacher.id)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-[#c52227] hover:bg-[#a81b20] text-white rounded-xl transition-colors shadow-xs"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Agregar Estudiante Ahora</span>
+                </button>
+              )}
             </div>
           ) : (
             teacher.students.map((student) => (
@@ -186,7 +212,8 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
                 key={student.id}
                 student={student}
                 weeks={weeks}
-                canDeleteStudent={canDeleteStudent ?? canDeleteTeacher}
+                canDeleteStudent={canDeleteStudent}
+                canEditStudentInfo={canEditStudentInfo}
                 onUpdateStudent={onUpdateStudent}
                 onDeleteStudent={onDeleteStudent}
               />
@@ -206,7 +233,7 @@ export const TeacherSection: React.FC<TeacherSectionProps> = ({
       <ConfirmDeleteModal
         isOpen={showDeleteTeacherConfirm}
         title={`¿Eliminar al profesor/a ${teacher.name}?`}
-        description={`Se eliminará permanentemente la cátedra de "${teacher.department}", el acceso del profesor y sus ${teacher.students.length} estudiantes registrados en Firebase Firestore.`}
+        description={`Se eliminará permanentemente la cátedra de "${teacher.department}", el acceso del profesor y sus ${teacher.students.length} estudiantes registrados.`}
         confirmText="Sí, eliminar profesor"
         onConfirm={() => onDeleteTeacher(teacher.id)}
         onClose={() => setShowDeleteTeacherConfirm(false)}
